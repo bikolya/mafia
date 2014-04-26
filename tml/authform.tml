@@ -10,6 +10,7 @@
             <input type="submit" value="Отправить" />
         </form>
         <p>Предыдущий логин: ${lastLogin}</p>
-        <p>${error}</p>
+        <p>Результат ввода : ${loginResult}</p>
+        <p>User ID         : ${userID}</p>
     </body>
 </html>
