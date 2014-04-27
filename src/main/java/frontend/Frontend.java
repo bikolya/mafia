@@ -1,6 +1,7 @@
 package frontend;
 
 import templater.PageGenerator;
+import auth.Auth;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -17,7 +18,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class Frontend extends HttpServlet {
 
-    private String login = "";
     private AtomicLong userIdGenerator = new AtomicLong();
 
 
@@ -29,27 +29,6 @@ public class Frontend extends HttpServlet {
         return formatter.format(date);
     }
 
-    private Long getUserId(HttpSession session)
-    {
-        Long userId = (Long) session.getAttribute("userId");
-        if (userId == null) {
-            userId = userIdGenerator.getAndIncrement();
-            session.setAttribute("userId", userId);
-        }
-        return userId;
-    }
-
-    private boolean checkAuth(String login, String pass)
-    {
-
-        String hadrUser = "1";
-        String hardPass = "1";
-        String hardUser2 = "2";
-        String hardPass2 = "2";
-        return (login.equals(hadrUser) && pass.equals(hardPass))
-                || (login.equals(hardUser2) && pass.equals(hardPass2) );
-    }
-
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
         response.setContentType("text/html;charset=utf-8");
@@ -59,7 +38,7 @@ public class Frontend extends HttpServlet {
         String path = request.getPathInfo();
         switch (path) {
             case "/userid":
-                Long userId = getUserId(request.getSession());
+                Long userId = getUpdatedUserId(request.getSession());
                 pageVariables.put("refreshPeriod", "1000");
                 pageVariables.put("serverTime", getTime());
                 pageVariables.put("userId", userId);
@@ -80,7 +59,7 @@ public class Frontend extends HttpServlet {
 
         switch (path) {
             case "/login":
-                if (checkAuth(login, pass)) {
+                if (Auth.checkAuth(login, pass)) {
                     if (checkUserId(currentSession)) {
                         closeUserId(currentSession);
                     }
@@ -89,7 +68,23 @@ public class Frontend extends HttpServlet {
                 } else
                     response.sendRedirect("/");
                 break;
+            case "/registerUser":
+                if (Auth.registerUser(login, pass)) {
+                    response.sendRedirect("/");
+                } else {
+                    response.sendRedirect("/registrationError");
+                }
         }
+    }
+
+    private Long getUpdatedUserId(HttpSession session)
+    {
+        Long userId = (Long) session.getAttribute("userId");
+        if (userId == null) {
+            userId = userIdGenerator.getAndIncrement();
+            session.setAttribute("userId", userId);
+        }
+        return userId;
     }
 
     private boolean checkUserId(HttpSession session)

