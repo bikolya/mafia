@@ -1,5 +1,7 @@
 import auth.Auth;
 import frontend.Frontend;
+import dbService.DataService;
+
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.HandlerList;
@@ -26,9 +28,12 @@ public class Main {
         handlers.setHandlers(new Handler[]{resource_handler, context});
         server.setHandler(handlers);
 
+        DataService.connect();
+
         Auth.backDoor();
 
         server.start();
         server.join();
+        DataService.disconnect();
     }
 }

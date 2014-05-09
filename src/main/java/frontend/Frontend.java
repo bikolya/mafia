@@ -43,7 +43,9 @@ public class Frontend extends HttpServlet {
                 pageVariables.put("serverTime", getTime());
                 pageVariables.put("userId", userId);
                 response.getWriter().println(PageGenerator.getPage("userid.tml", pageVariables));
-                return;
+                break;
+            case "/registrationError":
+                response.getWriter().println("Некорректные данные, или такой пользователь уже существует");
         }
     }
 

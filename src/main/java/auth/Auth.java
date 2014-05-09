@@ -1,5 +1,10 @@
 package auth;
 
+import dbService.DataService;
+import dbService.UserDAO;
+import dbService.User;
+
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -15,7 +20,14 @@ public class Auth {
 
     public static boolean checkAuth(String login, String pass)
     {
-        return users.get(login).equals(pass);
+        UserDAO ud = new UserDAO(DataService.conn);
+        try {
+            User u = ud.get(login);
+            return u.getPass().equals(pass);
+        } catch (SQLException e) {
+            System.out.println(e.toString());
+            return false;
+        }
     }
 
     public static boolean checkUser(String login)
@@ -25,11 +37,18 @@ public class Auth {
 
     public static boolean registerUser(String login, String pass)
     {
-        if(!checkUser(login)) {
-            users.put(login, pass);
-            return true;
-        } else {
+        if ( (login.length() == 0) || (pass.length() == 0) )
+            return false;
+
+        User u = new User (login, pass);
+        UserDAO ud = new UserDAO(DataService.conn);
+
+        try {
+            ud.create(u);
+        } catch (SQLException e) {
+            System.out.println(e.toString());
             return false;
         }
+        return true;
     }
 }
