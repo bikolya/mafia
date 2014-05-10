@@ -1,7 +1,7 @@
 package frontend;
 
+import auth.AccountService;
 import templater.PageGenerator;
-import auth.Auth;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -14,19 +14,16 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class Frontend extends HttpServlet {
 
-    private AtomicLong userIdGenerator = new AtomicLong();
+    private final static DateFormat FORMATTER = new SimpleDateFormat("HH:mm:ss");
+    private final static String REFRESH_PERIOD = "1000";
+    private AccountService accountService;
 
-
-    public static String getTime()
+    public Frontend(AccountService accountServiceInit)
     {
-        Date date = new Date();
-        date.getTime();
-        DateFormat formatter = new SimpleDateFormat("HH.mm.ss");
-        return formatter.format(date);
+        accountService = accountServiceInit;
     }
 
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
@@ -38,14 +35,18 @@ public class Frontend extends HttpServlet {
         String path = request.getPathInfo();
         switch (path) {
             case "/userid":
-                Long userId = getUpdatedUserId(request.getSession());
-                pageVariables.put("refreshPeriod", "1000");
+                Long userId = getSessionUserId(request.getSession());
+                pageVariables.put("refreshPeriod", REFRESH_PERIOD);
                 pageVariables.put("serverTime", getTime());
                 pageVariables.put("userId", userId);
                 response.getWriter().println(PageGenerator.getPage("userid.tml", pageVariables));
                 break;
             case "/registrationError":
                 response.getWriter().println("Некорректные данные, или такой пользователь уже существует");
+                break;
+            case "index":
+                response.getWriter().println(PageGenerator.getPage("..\\static\\index.html", null));
+                break;
         }
     }
 
@@ -61,17 +62,14 @@ public class Frontend extends HttpServlet {
 
         switch (path) {
             case "/login":
-                if (Auth.checkAuth(login, pass)) {
-                    if (checkUserId(currentSession)) {
-                        closeUserId(currentSession);
-                    }
-                    openUserId(currentSession);
+                if (accountService.checkPassword(login, pass)) {
+                    setSessionUserId(currentSession, accountService.getUserId(login));
                     response.sendRedirect("/userid");
                 } else
                     response.sendRedirect("/");
                 break;
             case "/registerUser":
-                if (Auth.registerUser(login, pass)) {
+                if (accountService.registerUser(login, pass)) {
                     response.sendRedirect("/");
                 } else {
                     response.sendRedirect("/registrationError");
@@ -79,29 +77,23 @@ public class Frontend extends HttpServlet {
         }
     }
 
-    private Long getUpdatedUserId(HttpSession session)
+    public static String getTime()
     {
-        Long userId = (Long) session.getAttribute("userId");
-        if (userId == null) {
-            userId = userIdGenerator.getAndIncrement();
-            session.setAttribute("userId", userId);
-        }
-        return userId;
+        return FORMATTER.format(new Date());
     }
 
-    private boolean checkUserId(HttpSession session)
+    private void setSessionUserId(HttpSession session, long id)
     {
-        return session.getAttribute("userId") != null;
+        session.setAttribute("userId", id);
     }
 
-    private void openUserId(HttpSession session)
+    private long getSessionUserId(HttpSession session)
     {
-        session.setAttribute("userId", userIdGenerator.getAndIncrement());
-    }
-
-    private void closeUserId(HttpSession session)
-    {
-        session.setAttribute("userId", null);
+        Object rawId = session.getAttribute("userId");
+        if( rawId != null)
+            return (long) rawId;
+        else
+            return -1;
     }
 }
 

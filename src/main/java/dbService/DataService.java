@@ -6,9 +6,9 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class DataService {
-    public static Connection conn = null;
+    private Connection conn = null;
 
-    public static Connection getConnection()
+    public Connection getConnection()
     {
         if (conn != null) {
             return conn;
@@ -18,14 +18,12 @@ public class DataService {
 
                 StringBuilder url = new StringBuilder();
                 url.
-                        append("jdbc:mysql://").		//db type
-                        append("localhost:"). 			//host name
-                        append("3306/").				//port
-                        append("mafia?").			//db name
-                        append("user=bikolya&").	    //login
-                        append("password=qweqwe");		//password
-
-                System.out.append("URL: " + url + "\n");
+                        append("jdbc:mysql://").
+                        append("localhost:").
+                        append("3306/").
+                        append("mafia?").
+                        append("user=bikolya&").
+                        append("password=qweqwe");
 
                 return DriverManager.getConnection(url.toString());
             } catch (SQLException | InstantiationException | IllegalAccessException | ClassNotFoundException e) {
@@ -34,26 +32,14 @@ public class DataService {
         return null;
     }
 
-    public static void connect()
+    public void disconnect()
     {
-        conn = getConnection();
-        System.out.append("Connected!\n");
-        try {
-            System.out.append("Autocommit: " + conn.getAutoCommit() + '\n');
-            System.out.append("DB name: " + conn.getMetaData().getDatabaseProductName() + '\n');
-            System.out.append("DB version: " + conn.getMetaData().getDatabaseProductVersion() + '\n');
-            System.out.append("Driver: " + conn.getMetaData().getDriverName() + '\n');
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static void disconnect()
-    {
-        try {
-            conn.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
+        if (conn != null) {
+            try {
+                conn.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
     }
 }

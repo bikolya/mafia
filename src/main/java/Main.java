@@ -1,4 +1,4 @@
-import auth.Auth;
+import auth.AccountService;
 import frontend.Frontend;
 import dbService.DataService;
 
@@ -14,7 +14,9 @@ import javax.servlet.Servlet;
 public class Main {
     public static void main(String[] args) throws Exception {
 
-        Servlet frontend = new Frontend();
+        DataService dataService = new DataService();
+        AccountService accountService = new AccountService(dataService);
+        Servlet frontend = new Frontend(accountService);
         Server server = new Server(8080);
 
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
@@ -28,12 +30,8 @@ public class Main {
         handlers.setHandlers(new Handler[]{resource_handler, context});
         server.setHandler(handlers);
 
-        DataService.connect();
-
-        Auth.backDoor();
-
         server.start();
         server.join();
-        DataService.disconnect();
+        dataService.disconnect();
     }
 }

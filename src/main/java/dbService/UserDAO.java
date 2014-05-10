@@ -10,41 +10,33 @@ import java.sql.SQLException;
 
 public class UserDAO {
 
-    private Connection conn;
+    private DataService dataService;
 
-    public UserDAO(Connection conn){
-        this.conn = conn;
+    public UserDAO(DataService dataServiceInit)
+    {
+        dataService = dataServiceInit;
     }
 
-    public User get(long id) throws SQLException{
+    public User get(String name) throws SQLException
+    {
         TExecutor exec = new TExecutor();
-        TResultHandler<User> r = new TResultHandler<User>(){
-
-            public User handle(ResultSet result) throws SQLException {
+        TResultHandler<User> resultHandler = new TResultHandler<User>()
+        {
+            public User handle(ResultSet result) throws SQLException
+            {
                 result.next();
                 return new User(result.getLong(1), result.getString(2), result.getString(3));
             }
         };
-        return exec.execQuery(conn, "SELECT * FROM users WHERE id=" + id, r);
+        return exec.execQuery(dataService.getConnection(), "SELECT * FROM users WHERE name="
+                                  + escape(name), resultHandler);
     }
 
-    public User get(String name) throws SQLException{
-        TExecutor exec = new TExecutor();
-        TResultHandler<User> r = new TResultHandler<User>(){
-
-            public User handle(ResultSet result) throws SQLException {
-                result.next();
-                return new User(result.getLong(1), result.getString(2), result.getString(3));
-            }
-
-        };
-        return exec.execQuery(conn, "SELECT * FROM users WHERE name=" + escape(name), r);
-    }
-
-    public void create(User u) throws SQLException{
+    public void create(User user) throws SQLException
+    {
         TransactionExecutor exec = new TransactionExecutor();
-        exec.execUpdate(conn, "INSERT INTO users (name, password) VALUES (" + escape(u.getName()) + ","
-                + escape(u.getPass()) + ");");
+        exec.execUpdate(dataService.getConnection(), "INSERT INTO users (name, password) VALUES ("
+                            + escape(user.getName()) + "," + escape(user.getPass()) + ");");
     }
 
     private String escape(String str)
