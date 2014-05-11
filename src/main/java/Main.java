@@ -16,7 +16,11 @@ public class Main {
 
         DataService dataService = new DataService();
         AccountService accountService = new AccountService(dataService);
-        Servlet frontend = new Frontend(accountService);
+        Frontend frontend = new Frontend(accountService);
+
+        Thread frontendThread = new Thread(frontend);
+        frontendThread.start();
+
         Server server = new Server(8080);
 
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
