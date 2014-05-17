@@ -4,7 +4,6 @@ import dbService.executor.TExecutor;
 import dbService.executor.TransactionExecutor;
 import dbService.handlers.TResultHandler;
 
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 

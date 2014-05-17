@@ -12,6 +12,8 @@ import java.sql.SQLException;
 
 public class AccountService implements Runnable, Subscriber {
 
+    private final static int DELAY = 5000;
+
     private DataService dataService;
     private MessageSystem messageSystem;
     private Address address;
@@ -27,6 +29,7 @@ public class AccountService implements Runnable, Subscriber {
 
     public boolean checkPassword(String login, String pass)
     {
+        emulateDelay();
         UserDAO userDAO = new UserDAO(dataService);
         try {
             User user = userDAO.get(login);
@@ -39,6 +42,7 @@ public class AccountService implements Runnable, Subscriber {
 
     public boolean registerUser(String login, String pass)
     {
+        emulateDelay();
         if ( login.isEmpty() || pass.isEmpty() )
             return false;
 
@@ -55,11 +59,6 @@ public class AccountService implements Runnable, Subscriber {
 
     public long getUserId(String login)
     {
-        try {
-            Thread.currentThread().sleep(5000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
         UserDAO userDAO = new UserDAO(dataService);
         long id = -1;
         try {
@@ -78,8 +77,22 @@ public class AccountService implements Runnable, Subscriber {
         return messageSystem;
     }
 
+    private void emulateDelay()
+    {
+        try {
+            Thread.currentThread().sleep(DELAY);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void run() {
         while(true) {
+            try {
+                Thread.currentThread().sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             messageSystem.execForSubscriber(this);
         }
     }

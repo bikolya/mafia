@@ -3,7 +3,8 @@ package frontend;
 import messageSystem.Address;
 import messageSystem.Message;
 import messageSystem.MessageSystem;
-import messageSystem.messages.MsgGetUserId;
+import messageSystem.messages.MsgCheckPassword;
+import messageSystem.messages.MsgRegisterUser;
 import templater.PageGenerator;
 import messageSystem.Subscriber;
 
@@ -51,8 +52,8 @@ public class Frontend extends HttpServlet implements Runnable, Subscriber {
             case "/userid":
                 handleGetUserId(request, response);
                 break;
-            case "/registrationError":
-                handleGetUserId(request, response);
+            case "/registrationStatus":
+                handleGetRegistrationStatus(request, response);
                 break;
             case "index":
             case "/":
@@ -87,16 +88,6 @@ public class Frontend extends HttpServlet implements Runnable, Subscriber {
         return FORMATTER.format(new Date());
     }
 
-
-    private String getSessionId(HttpSession session)
-    {
-        Object rawID = session.getAttribute("sessionId");
-        if( rawID != null)
-            return (String) rawID;
-        else
-            return "";
-    }
-
     private void createUniqueUserSession(HttpSession session)
     {
         if(sessions.containsKey(session.getId()))
@@ -104,14 +95,6 @@ public class Frontend extends HttpServlet implements Runnable, Subscriber {
         else {
             sessions.put(session.getId(), new UserSession(session.getId()));
         }
-    }
-
-    private boolean checkAuth(HttpSession session)
-    {
-        if(sessions.containsKey(session.getId())) {
-            return sessions.get(session.getId()).getUserId() != null;
-        }
-        return false;
     }
 
     void handleLogin(HttpServletRequest request, HttpServletResponse response) throws IOException
@@ -122,7 +105,7 @@ public class Frontend extends HttpServlet implements Runnable, Subscriber {
 
         logOut(sessionId);
         Address as_address = messageSystem.getAddressService().getAccountService();
-        Message msg = new MsgGetUserId(address, as_address, login, sessionId);
+        Message msg = new MsgCheckPassword(address, as_address, login, pass, sessionId);
         messageSystem.sendMessage(msg);
 
         response.sendRedirect("/userid");
@@ -132,6 +115,15 @@ public class Frontend extends HttpServlet implements Runnable, Subscriber {
     {
         String login = request.getParameter("login");
         String pass = request.getParameter("password");
+        String sessionId = request.getSession().getId();
+
+        logOut(sessionId);
+
+        Address as_address = messageSystem.getAddressService().getAccountService();
+        Message msg = new MsgRegisterUser(address, as_address, login, pass, sessionId);
+        messageSystem.sendMessage(msg);
+
+        response.sendRedirect("/registrationStatus");
     }
 
 
@@ -149,6 +141,23 @@ public class Frontend extends HttpServlet implements Runnable, Subscriber {
         } else
             pageVariables.put("userId", userId);
         response.getWriter().println(PageGenerator.getPage("userid.tml", pageVariables));
+    }
+
+    private void handleGetRegistrationStatus(HttpServletRequest request, HttpServletResponse response) throws IOException
+    {
+        Map<String, Object> pageVariables = new HashMap<>();
+
+        Long userId = sessions.get(request.getSession().getId()).getUserId();
+        pageVariables.put("refreshPeriod", REFRESH_PERIOD);
+        pageVariables.put("serverTime", getTime());
+        if(userId == null) {
+            pageVariables.put("status", "Ждите ответа от базы");
+        } else if(userId == -1) {
+            pageVariables.put("status", "Некорректные данные, или такой пользователь уже существует");
+        } else
+            response.sendRedirect("/");
+
+        response.getWriter().println(PageGenerator.getPage("signup.tml", pageVariables));
     }
 
     private void logOut(String sid)
@@ -176,6 +185,10 @@ public class Frontend extends HttpServlet implements Runnable, Subscriber {
         sessions.get(sid).setName(name);
     }
 
+    public void updateStatus(String sid, Long uid)
+    {
+        sessions.get(sid).setUserId(uid);
+    }
 
     public void run() {
         TimerTask task = new TimerTask() {
