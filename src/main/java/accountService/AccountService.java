@@ -1,18 +1,28 @@
-package auth;
+package accountService;
 
 import dbService.DataService;
 import dbService.UserDAO;
 import dbService.User;
+import messageSystem.Address;
+import messageSystem.MessageSystem;
+import messageSystem.Subscriber;
 
 import java.sql.SQLException;
 
-public class AccountService {
+
+public class AccountService implements Runnable, Subscriber {
 
     private DataService dataService;
+    private MessageSystem messageSystem;
+    private Address address;
 
-    public AccountService(DataService dataServiceInit)
+    public AccountService(DataService dataServiceInit, MessageSystem messageSystemInit)
     {
         dataService = dataServiceInit;
+        messageSystem = messageSystemInit;
+        address = new Address();
+        messageSystem.getAddressService().addAccountService(address);
+        messageSystem.registerService(this);
     }
 
     public boolean checkPassword(String login, String pass)
@@ -45,6 +55,11 @@ public class AccountService {
 
     public long getUserId(String login)
     {
+        try {
+            Thread.currentThread().sleep(5000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         UserDAO userDAO = new UserDAO(dataService);
         long id = -1;
         try {
@@ -53,5 +68,19 @@ public class AccountService {
             e.printStackTrace();
         }
         return id;
+    }
+
+    public Address getAddress() {
+        return address;
+    }
+
+    public MessageSystem getMessageSystem() {
+        return messageSystem;
+    }
+
+    public void run() {
+        while(true) {
+            messageSystem.execForSubscriber(this);
+        }
     }
 }

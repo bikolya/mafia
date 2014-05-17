@@ -1,7 +1,11 @@
 package frontend;
 
-import auth.AccountService;
+import messageSystem.Address;
+import messageSystem.Message;
+import messageSystem.MessageSystem;
+import messageSystem.messages.MsgGetUserId;
 import templater.PageGenerator;
+import messageSystem.Subscriber;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -14,32 +18,33 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class Frontend extends HttpServlet implements Runnable {
+public class Frontend extends HttpServlet implements Runnable, Subscriber {
 
     private final static DateFormat FORMATTER = new SimpleDateFormat("HH:mm:ss");
     private final static String REFRESH_PERIOD = "1000";
-    private final static int HANDLE_COUNT_LOG_INTERVAL = 5000;
-    private AccountService accountService;
+    private final static int LOG_INTERVAL = 5000;
 
+    private MessageSystem messageSystem;
+    private Address address;
     private AtomicInteger handleCount;
     private Map<String, UserSession> sessions;
-    private SessionIdGen sessionIdGen;
 
-    public Frontend(AccountService accountServiceInit)
+    public Frontend(MessageSystem messageSystemInit)
     {
-        accountService = accountServiceInit;
         handleCount = new AtomicInteger();
         sessions = new HashMap<>();
-        sessionIdGen = new SessionIdGen();
+        address = new Address();
+        messageSystem = messageSystemInit;
+        messageSystem.registerService(this);
     }
 
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
         handleCount.incrementAndGet();
+        createUniqueUserSession(request.getSession());
 
         response.setContentType("text/html;charset=utf-8");
         response.setStatus(HttpServletResponse.SC_OK);
-        setUniqueSessionId(request.getSession());
 
         String path = request.getPathInfo();
         switch (path) {
@@ -50,6 +55,9 @@ public class Frontend extends HttpServlet implements Runnable {
                 handleGetUserId(request, response);
                 break;
             case "index":
+            case "/":
+            case "":
+
                 response.getWriter().println(PageGenerator.getPage("..\\static\\index.html", null));
                 break;
         }
@@ -58,10 +66,10 @@ public class Frontend extends HttpServlet implements Runnable {
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
         handleCount.incrementAndGet();
+        createUniqueUserSession(request.getSession());
 
         response.setContentType("text/html;charset=utf-8");
         response.setStatus(HttpServletResponse.SC_OK);
-        HttpSession currentSession = request.getSession();
         String path = request.getPathInfo();
 
         switch (path) {
@@ -79,14 +87,6 @@ public class Frontend extends HttpServlet implements Runnable {
         return FORMATTER.format(new Date());
     }
 
-    private long getSessionUserId(HttpSession session)
-    {
-        Object rawId = session.getAttribute("userId");
-        if( rawId != null)
-            return (long) rawId;
-        else
-            return -1;
-    }
 
     private String getSessionId(HttpSession session)
     {
@@ -97,62 +97,85 @@ public class Frontend extends HttpServlet implements Runnable {
             return "";
     }
 
-    private void setSessionUserId(HttpSession session, long id)
+    private void createUniqueUserSession(HttpSession session)
     {
-        session.setAttribute("userId", id);
+        if(sessions.containsKey(session.getId()))
+            return;
+        else {
+            sessions.put(session.getId(), new UserSession(session.getId()));
+        }
     }
 
-    private void setUniqueSessionId(HttpSession session)
+    private boolean checkAuth(HttpSession session)
     {
-        if(session.getAttribute("sessionId") == null)
-            session.setAttribute("sessionId", sessionIdGen.nextSessionId());
-    }
-
-    private void keepSession(UserSession userSession)
-    {
-        sessions.put(userSession.getSessionId(), userSession);
+        if(sessions.containsKey(session.getId())) {
+            return sessions.get(session.getId()).getUserId() != null;
+        }
+        return false;
     }
 
     void handleLogin(HttpServletRequest request, HttpServletResponse response) throws IOException
     {
         String login = request.getParameter("login");
         String pass = request.getParameter("password");
-        HttpSession currSession = request.getSession();
+        String sessionId = request.getSession().getId();
 
-        if (accountService.checkPassword(login, pass)) {
-            long userId = accountService.getUserId(login);
-            setSessionUserId(currSession, userId);
+        logOut(sessionId);
+        Address as_address = messageSystem.getAddressService().getAccountService();
+        Message msg = new MsgGetUserId(address, as_address, login, sessionId);
+        messageSystem.sendMessage(msg);
 
-            String sid = getSessionId(currSession);
-            keepSession(new UserSession(sid, login, userId));
-
-            response.sendRedirect("/userid");
-        } else
-            response.sendRedirect("/");
+        response.sendRedirect("/userid");
     }
 
     void handleRegistration(HttpServletRequest request, HttpServletResponse response) throws IOException
     {
         String login = request.getParameter("login");
         String pass = request.getParameter("password");
-
-        if (accountService.registerUser(login, pass)) {
-            response.sendRedirect("/");
-        } else {
-            response.sendRedirect("/registrationError");
-        }
     }
+
 
     void handleGetUserId(HttpServletRequest request, HttpServletResponse response) throws IOException
     {
         Map<String, Object> pageVariables = new HashMap<>();
 
-        Long userId = getSessionUserId(request.getSession());
+        Long userId = sessions.get(request.getSession().getId()).getUserId();
         pageVariables.put("refreshPeriod", REFRESH_PERIOD);
         pageVariables.put("serverTime", getTime());
-        pageVariables.put("userId", userId);
+        if(userId == null) {
+            pageVariables.put("userId", "Идет авторизация");
+        } else if(userId == -1) {
+            pageVariables.put("userId", "Неверное имя пользоватея или пароль");
+        } else
+            pageVariables.put("userId", userId);
         response.getWriter().println(PageGenerator.getPage("userid.tml", pageVariables));
     }
+
+    private void logOut(String sid)
+    {
+        if(sessions.containsKey(sid))
+            sessions.get(sid).setUserId(null);
+    }
+
+    public Address getAddress() {
+        return address;
+    }
+
+    public MessageSystem getMessageSystem() {
+        return messageSystem;
+    }
+
+    public void updateUserId(String sid, Long uid)
+    {
+        sessions.get(sid).setUserId(uid);
+    }
+
+    public void updateUserInfo(String sid, String name, Long uid)
+    {
+        sessions.get(sid).setUserId(uid);
+        sessions.get(sid).setName(name);
+    }
+
 
     public void run() {
         TimerTask task = new TimerTask() {
@@ -162,7 +185,15 @@ public class Frontend extends HttpServlet implements Runnable {
             }
         };
         Timer timer = new Timer();
-        timer.scheduleAtFixedRate(task, 0, HANDLE_COUNT_LOG_INTERVAL);
+        timer.scheduleAtFixedRate(task, 0, LOG_INTERVAL);
+        while(true) {
+            try {
+                Thread.currentThread().sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            messageSystem.execForSubscriber(this);
+        }
     }
 
 }

@@ -1,6 +1,7 @@
-import auth.AccountService;
+import accountService.AccountService;
 import frontend.Frontend;
 import dbService.DataService;
+import messageSystem.MessageSystem;
 
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
@@ -9,17 +10,20 @@ import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 
-import javax.servlet.Servlet;
-
 public class Main {
     public static void main(String[] args) throws Exception {
-
-        DataService dataService = new DataService();
-        AccountService accountService = new AccountService(dataService);
-        Frontend frontend = new Frontend(accountService);
+        MessageSystem messageSystem = new MessageSystem();
+        AccountService accountService1 = new AccountService(new DataService(), messageSystem);
+        AccountService accountService2 = new AccountService(new DataService(), messageSystem);
+        Frontend frontend = new Frontend(messageSystem);
 
         Thread frontendThread = new Thread(frontend);
         frontendThread.start();
+
+        Thread accountServiceThread1 = new Thread(accountService1);
+        accountServiceThread1.start();
+        Thread accountServiceThread2 = new Thread(accountService2);
+        accountServiceThread2.start();
 
         Server server = new Server(8080);
 
@@ -36,6 +40,5 @@ public class Main {
 
         server.start();
         server.join();
-        dataService.disconnect();
     }
 }

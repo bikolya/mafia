@@ -14,6 +14,13 @@ public class UserSession {
         userId = uid;
     }
 
+    public UserSession(String id)
+    {
+        sessionId = id;
+        userName = null;
+        userId = null;
+    }
+
     public String getSessionId()
     {
         return sessionId;
@@ -24,5 +31,19 @@ public class UserSession {
         return userName;
     }
 
+    public void setName(String name)
+    {
+        userName = name;
+    }
+
+    public void setUserId(Long id)
+    {
+        userId = id;
+    }
+
+    public Long getUserId()
+    {
+        return userId;
+    }
 
 }
