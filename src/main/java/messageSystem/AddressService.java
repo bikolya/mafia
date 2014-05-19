@@ -1,29 +1,42 @@
 package messageSystem;
 
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class AddressService {
 
-    private List<Address> services = new CopyOnWriteArrayList<>();
+    private List<Address> accountServices = new CopyOnWriteArrayList<>();
+    private List<Address> gameMechanicsServices = new CopyOnWriteArrayList<>();
 
-    private Iterator<Address> iter = services.iterator();
+    private Iterator<Address> accountServicesIterator = accountServices.iterator();
+    private Iterator<Address> gameMechanicsServicesIterator = accountServices.iterator();
 
     public void addAccountService(Address AS_address)
     {
-        services.add(AS_address);
+        accountServices.add(AS_address);
     }
 
     public Address getAccountService()
     {
-        if(!iter.hasNext())
-            iter = services.iterator();
+        if(!accountServicesIterator.hasNext())
+            accountServicesIterator = accountServices.iterator();
 
-        return iter.next();
+        return accountServicesIterator.next();
     }
 
+    public void addGameMechanicsService(Address AS_address)
+    {
+        gameMechanicsServices.add(AS_address);
+    }
+
+    public Address getGameMechanicsService()
+    {
+        if(!gameMechanicsServicesIterator.hasNext())
+            gameMechanicsServicesIterator = accountServices.iterator();
+
+        return gameMechanicsServicesIterator.next();
+    }
 
 
 }

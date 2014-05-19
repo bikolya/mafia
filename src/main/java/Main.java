@@ -1,6 +1,7 @@
 import accountService.AccountService;
 import frontend.Frontend;
 import dbService.DataService;
+import game.GameMechanics;
 import messageSystem.MessageSystem;
 
 import org.eclipse.jetty.server.Handler;
@@ -16,6 +17,7 @@ public class Main {
         AccountService accountService1 = new AccountService(new DataService(), messageSystem);
         AccountService accountService2 = new AccountService(new DataService(), messageSystem);
         Frontend frontend = new Frontend(messageSystem);
+        GameMechanics gameMechanics = new GameMechanics(messageSystem);
 
         Thread frontendThread = new Thread(frontend);
         frontendThread.start();
@@ -24,6 +26,8 @@ public class Main {
         accountServiceThread1.start();
         Thread accountServiceThread2 = new Thread(accountService2);
         accountServiceThread2.start();
+        Thread gameThread = new  Thread(gameMechanics);
+        gameThread.start();
 
         Server server = new Server(8080);
 

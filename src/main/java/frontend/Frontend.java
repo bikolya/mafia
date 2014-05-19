@@ -1,5 +1,6 @@
 package frontend;
 
+import game.Player;
 import messageSystem.Address;
 import messageSystem.Message;
 import messageSystem.MessageSystem;
@@ -24,8 +25,10 @@ public class Frontend extends HttpServlet implements Runnable, Subscriber {
 
     private final static DateFormat FORMATTER = new SimpleDateFormat("HH:mm:ss");
     private final static String REFRESH_PERIOD = "1000";
-    private final static int LOG_INTERVAL = 5000;
     private final static int DB_WAIT_TIME = 5000;
+    private final int GAME_CONNECTION_TIMEOUT = 5000;
+
+    private Map<String, Player> players;
 
     private MessageSystem messageSystem;
     private Address address;
@@ -39,6 +42,7 @@ public class Frontend extends HttpServlet implements Runnable, Subscriber {
         address = new Address();
         messageSystem = messageSystemInit;
         messageSystem.registerService(this);
+        players = new HashMap<>();
     }
 
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
@@ -56,6 +60,9 @@ public class Frontend extends HttpServlet implements Runnable, Subscriber {
                 break;
             case "/registrationStatus":
                 handleGetRegistrationStatus(request, response);
+                break;
+            case "/game":
+                handleGetGame(request, response);
                 break;
             case "index":
             case "/":
@@ -98,6 +105,7 @@ public class Frontend extends HttpServlet implements Runnable, Subscriber {
         String sessionId = request.getSession().getId();
 
         sessions.get(sessionId).setLastAction(TimeHelper.getTime());
+        sessions.get(sessionId).setName(login);
         logOut(sessionId);
         Address as_address = messageSystem.getAddressService().getAccountService();
         Message msg = new MsgCheckPassword(address, as_address, login, pass, sessionId);
@@ -155,10 +163,42 @@ public class Frontend extends HttpServlet implements Runnable, Subscriber {
             pageVariables.put("status", "Ждите ответа от базы");
         } else if(userId == -1) {
             pageVariables.put("status", "Некорректные данные, или такой пользователь уже существует");
-        } else
+        } else {
+            pageVariables.put("status", "OK");
             response.sendRedirect("/");
-
+        }
         response.getWriter().println(PageGenerator.getPage("signup.tml", pageVariables));
+    }
+
+    private void handleGetGame(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        Map<String, Object> pageVariables = new HashMap<>();
+        pageVariables.put("refreshPeriod", REFRESH_PERIOD);
+
+        UserSession session = sessions.get(request.getSession().getId());
+
+        String playerName = session.getName();
+        if(!players.containsKey(playerName) && session.getUserId() > -1) {
+            Player player = new Player(session.getSessionId(), session.getName(), session.getUserId());
+            player.setLastAction(TimeHelper.getTime());
+            players.put(playerName, player);
+        } else {
+            players.get(playerName).setLastAction(TimeHelper.getTime());
+        }
+
+        pageVariables.put("status", "Ожидание игроков");
+
+        if ( players.size() >= 2) {
+            pageVariables.put("status", "В игре");
+        }
+
+        StringBuilder playersInGame = new StringBuilder();
+
+        for(Player p : players.values()) {
+            playersInGame.append(p.getName()).append("  ");
+        }
+        pageVariables.put("players", playersInGame.toString());
+
+        response.getWriter().println(PageGenerator.getPage("game.tml", pageVariables));
     }
 
     private void logOut(String sid)
@@ -192,14 +232,6 @@ public class Frontend extends HttpServlet implements Runnable, Subscriber {
     }
 
     public void run() {
-        TimerTask task = new TimerTask() {
-            public void run() {
-                System.out.print("Handle Count: ");
-                System.out.println(handleCount.get());
-            }
-        };
-        Timer timer = new Timer();
-        timer.scheduleAtFixedRate(task, 0, LOG_INTERVAL);
         while(true) {
             try {
                 Thread.currentThread().sleep(100);
