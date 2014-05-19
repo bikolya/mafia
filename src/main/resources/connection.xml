@@ -1,4 +1,6 @@
 <class type='utils.resource.ConnectionResources'>
+    <driver>com.mysql.jdbc.Driver</driver>
+    <host>localhost</host>
     <port>3306</port>
     <db_name>mafia</db_name>
     <user>bikolya</user>

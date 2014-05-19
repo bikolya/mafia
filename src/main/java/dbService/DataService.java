@@ -18,10 +18,10 @@ public class DataService {
             return conn;
         } else
             try {
-                DriverManager.registerDriver((Driver) Class.forName("com.mysql.jdbc.Driver").newInstance());
+                DriverManager.registerDriver((Driver) Class.forName(connResources.getDriver()).newInstance());
                 return DriverManager.getConnection(
                         "jdbc:mysql://" +
-                        "localhost:" +
+                        connResources.getHost() + ":" +
                         connResources.getPort() + "/" +
                         connResources.getDB_name() + "?" +
                         "user=" + connResources.getUser() +"&" +

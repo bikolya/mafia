@@ -7,6 +7,7 @@ import messageSystem.messages.MsgCheckPassword;
 import messageSystem.messages.MsgRegisterUser;
 import templater.PageGenerator;
 import messageSystem.Subscriber;
+import utils.helpers.TimeHelper;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -24,6 +25,7 @@ public class Frontend extends HttpServlet implements Runnable, Subscriber {
     private final static DateFormat FORMATTER = new SimpleDateFormat("HH:mm:ss");
     private final static String REFRESH_PERIOD = "1000";
     private final static int LOG_INTERVAL = 5000;
+    private final static int DB_WAIT_TIME = 5000;
 
     private MessageSystem messageSystem;
     private Address address;
@@ -83,18 +85,10 @@ public class Frontend extends HttpServlet implements Runnable, Subscriber {
         }
     }
 
-    public static String getTime()
-    {
-        return FORMATTER.format(new Date());
-    }
-
     private void createUniqueUserSession(HttpSession session)
     {
-        if(sessions.containsKey(session.getId()))
-            return;
-        else {
+        if(! sessions.containsKey(session.getId()))
             sessions.put(session.getId(), new UserSession(session.getId()));
-        }
     }
 
     void handleLogin(HttpServletRequest request, HttpServletResponse response) throws IOException
@@ -103,6 +97,7 @@ public class Frontend extends HttpServlet implements Runnable, Subscriber {
         String pass = request.getParameter("password");
         String sessionId = request.getSession().getId();
 
+        sessions.get(sessionId).setLastAction(TimeHelper.getTime());
         logOut(sessionId);
         Address as_address = messageSystem.getAddressService().getAccountService();
         Message msg = new MsgCheckPassword(address, as_address, login, pass, sessionId);
@@ -131,15 +126,21 @@ public class Frontend extends HttpServlet implements Runnable, Subscriber {
     {
         Map<String, Object> pageVariables = new HashMap<>();
 
-        Long userId = sessions.get(request.getSession().getId()).getUserId();
+        String sid = request.getSession().getId();
+        Long userId = sessions.get(sid).getUserId();
+
         pageVariables.put("refreshPeriod", REFRESH_PERIOD);
-        pageVariables.put("serverTime", getTime());
+        pageVariables.put("serverTime", TimeHelper.getTimeString());
         if(userId == null) {
             pageVariables.put("userId", "Идет авторизация");
         } else if(userId == -1) {
             pageVariables.put("userId", "Неверное имя пользоватея или пароль");
         } else
             pageVariables.put("userId", userId);
+
+        if((TimeHelper.getTime().getTime() - sessions.get(sid).getLastAction().getTime() > DB_WAIT_TIME) && userId==null)
+            pageVariables.put("userId", "Нет ответа от базы");
+
         response.getWriter().println(PageGenerator.getPage("userid.tml", pageVariables));
     }
 
@@ -149,7 +150,7 @@ public class Frontend extends HttpServlet implements Runnable, Subscriber {
 
         Long userId = sessions.get(request.getSession().getId()).getUserId();
         pageVariables.put("refreshPeriod", REFRESH_PERIOD);
-        pageVariables.put("serverTime", getTime());
+        pageVariables.put("serverTime", TimeHelper.getTimeString());
         if(userId == null) {
             pageVariables.put("status", "Ждите ответа от базы");
         } else if(userId == -1) {

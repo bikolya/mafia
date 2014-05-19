@@ -1,10 +1,13 @@
 package frontend;
 
+import java.util.Date;
+
 public class UserSession {
 
     private String sessionId;
     private String userName;
     private Long userId;
+    private Date lastAction;
 
 
     public UserSession(String sid, String name, Long uid)
@@ -46,4 +49,11 @@ public class UserSession {
         return userId;
     }
 
+    public Date getLastAction() {
+        return lastAction;
+    }
+
+    public void setLastAction(Date lastAction) {
+        this.lastAction = lastAction;
+    }
 }
