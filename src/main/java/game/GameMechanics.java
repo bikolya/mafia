@@ -6,15 +6,14 @@ import messageSystem.Subscriber;
 
 public class GameMechanics implements Runnable, Subscriber {
 
-    private MessageSystem messageSystem;
-    private Address address;
+    private final MessageSystem messageSystem;
+    private final Address address;
 
     public GameMechanics(MessageSystem ms)
     {
         messageSystem = ms;
         address = new Address();
         messageSystem.registerService(this);
-        messageSystem.getAddressService().addGameMechanicsService(address);
     }
 
 

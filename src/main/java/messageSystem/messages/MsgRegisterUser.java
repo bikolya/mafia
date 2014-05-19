@@ -20,7 +20,7 @@ public class MsgRegisterUser extends MsgToAccountService {
 
     public void exec(AccountService accountService)
     {
-        Message back = null;
+        Message back;
         if(accountService.registerUser(name, pass)) {
             back = new MsgUpdateUserId(getTo(), getFrom(), sessionId, accountService.getUserId(name));
         }

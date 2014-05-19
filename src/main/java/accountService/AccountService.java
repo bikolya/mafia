@@ -14,16 +14,15 @@ public class AccountService implements Runnable, Subscriber {
 
     private final static int DELAY = 5000;
 
-    private DataService dataService;
-    private MessageSystem messageSystem;
-    private Address address;
+    private final DataService dataService;
+    private final MessageSystem messageSystem;
+    private final Address address;
 
     public AccountService(DataService dataServiceInit, MessageSystem messageSystemInit)
     {
         dataService = dataServiceInit;
         messageSystem = messageSystemInit;
         address = new Address();
-        messageSystem.getAddressService().addAccountService(address);
         messageSystem.registerService(this);
     }
 
@@ -80,7 +79,7 @@ public class AccountService implements Runnable, Subscriber {
     private void emulateDelay()
     {
         try {
-            Thread.currentThread().sleep(DELAY);
+            Thread.sleep(DELAY);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -89,7 +88,7 @@ public class AccountService implements Runnable, Subscriber {
     public void run() {
         while(true) {
             try {
-                Thread.currentThread().sleep(100);
+                Thread.sleep(100);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

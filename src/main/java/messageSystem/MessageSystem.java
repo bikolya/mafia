@@ -30,6 +30,7 @@ public class MessageSystem {
 
     public void registerService(Subscriber subscriber)
     {
+        addressService.addService(subscriber);
         messages.put(subscriber.getAddress(), new ConcurrentLinkedQueue<Message>());
     }
 

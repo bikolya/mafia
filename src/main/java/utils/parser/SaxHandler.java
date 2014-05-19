@@ -6,7 +6,6 @@ import org.xml.sax.helpers.DefaultHandler;
 import utils.ReflectionHelper;
 
 public class SaxHandler extends DefaultHandler {
-    private static String CLASSNAME = "class";
     private String element = null;
     private Object object = null;
 
@@ -19,6 +18,7 @@ public class SaxHandler extends DefaultHandler {
     }
 
     public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+        String CLASSNAME = "class";
         if(!qName.equals(CLASSNAME)){
             element = qName;
         }

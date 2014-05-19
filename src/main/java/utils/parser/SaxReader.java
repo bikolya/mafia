@@ -2,7 +2,6 @@ package utils.parser;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
-import org.xml.sax.helpers.DefaultHandler;
 
 public class SaxReader {
     public static Object readXML(String xmlFile) {

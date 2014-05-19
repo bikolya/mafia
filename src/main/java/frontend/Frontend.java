@@ -1,5 +1,6 @@
 package frontend;
 
+import accountService.AccountService;
 import game.Player;
 import messageSystem.Address;
 import messageSystem.Message;
@@ -30,8 +31,8 @@ public class Frontend extends HttpServlet implements Runnable, Subscriber {
 
     private Map<String, Player> players;
 
-    private MessageSystem messageSystem;
-    private Address address;
+    private final MessageSystem messageSystem;
+    private final Address address;
     private AtomicInteger handleCount;
     private Map<String, UserSession> sessions;
 
@@ -107,7 +108,7 @@ public class Frontend extends HttpServlet implements Runnable, Subscriber {
         sessions.get(sessionId).setLastAction(TimeHelper.getTime());
         sessions.get(sessionId).setName(login);
         logOut(sessionId);
-        Address as_address = messageSystem.getAddressService().getAccountService();
+        Address as_address = messageSystem.getAddressService().getService(AccountService.class);
         Message msg = new MsgCheckPassword(address, as_address, login, pass, sessionId);
         messageSystem.sendMessage(msg);
 
@@ -122,7 +123,7 @@ public class Frontend extends HttpServlet implements Runnable, Subscriber {
 
         logOut(sessionId);
 
-        Address as_address = messageSystem.getAddressService().getAccountService();
+        Address as_address = messageSystem.getAddressService().getService(AccountService.class);
         Message msg = new MsgRegisterUser(address, as_address, login, pass, sessionId);
         messageSystem.sendMessage(msg);
 

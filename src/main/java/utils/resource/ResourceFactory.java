@@ -7,10 +7,10 @@ import java.util.Map;
 
 public class ResourceFactory {
     private static ResourceFactory resourceFactory = null;
-    private static Map<String, Resource> resourceMap = new HashMap<>();
+    private Map<String, Resource> resourceMap = new HashMap<>();
 
 
-    public static ResourceFactory getInstance(){
+    public static synchronized ResourceFactory getInstance(){
         if(resourceFactory != null){
             return resourceFactory;
         }

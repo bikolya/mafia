@@ -1,6 +1,5 @@
 package messageSystem.messages;
 
-import accountService.AccountService;
 import frontend.Frontend;
 import messageSystem.Address;
 import messageSystem.Message;

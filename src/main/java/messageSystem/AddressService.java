@@ -2,40 +2,32 @@ package messageSystem;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class AddressService {
 
-    private List<Address> accountServices = new CopyOnWriteArrayList<>();
-    private List<Address> gameMechanicsServices = new CopyOnWriteArrayList<>();
+    private Map<Class, List<Address>> services = new ConcurrentHashMap<>();
+    private Map<Class, Iterator<Address>> iterators = new ConcurrentHashMap<>();
 
-    private Iterator<Address> accountServicesIterator = accountServices.iterator();
-    private Iterator<Address> gameMechanicsServicesIterator = accountServices.iterator();
-
-    public void addAccountService(Address AS_address)
+    public Address getService(Class clazz)
     {
-        accountServices.add(AS_address);
+        Iterator<Address> iterator = iterators.get(clazz);
+
+        if(!iterator.hasNext())
+            iterator = services.get(clazz).iterator();
+
+        return iterator.next();
     }
 
-    public Address getAccountService()
+    public void addService(Subscriber subscriber)
     {
-        if(!accountServicesIterator.hasNext())
-            accountServicesIterator = accountServices.iterator();
-
-        return accountServicesIterator.next();
-    }
-
-    public void addGameMechanicsService(Address AS_address)
-    {
-        gameMechanicsServices.add(AS_address);
-    }
-
-    public Address getGameMechanicsService()
-    {
-        if(!gameMechanicsServicesIterator.hasNext())
-            gameMechanicsServicesIterator = accountServices.iterator();
-
-        return gameMechanicsServicesIterator.next();
+        if( services.get(subscriber.getClass()) == null) {
+            services.put(subscriber.getClass(), new CopyOnWriteArrayList<Address>());
+            iterators.put(subscriber.getClass(), services.get(subscriber.getClass()).iterator());
+        }
+        services.get(subscriber.getClass()).add(subscriber.getAddress());
     }
 
 
