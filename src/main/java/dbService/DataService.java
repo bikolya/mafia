@@ -10,7 +10,7 @@ import java.sql.SQLException;
 
 public class DataService {
     private Connection conn = null;
-    private ConnectionResources connResources = (ConnectionResources) ResourceFactory.getInstance().get("/Users/bikolya/workspace/IdeaProjects/mafia/src/main/resources/connection.xml");
+    private ConnectionResources connResources = (ConnectionResources) ResourceFactory.getInstance().get("src/main/resources/connection.xml");
 
     public Connection getConnection()
     {
