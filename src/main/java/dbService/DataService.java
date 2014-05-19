@@ -1,5 +1,8 @@
 package dbService;
 
+import utils.resource.ConnectionResources;
+import utils.resource.ResourceFactory;
+
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
@@ -7,6 +10,7 @@ import java.sql.SQLException;
 
 public class DataService {
     private Connection conn = null;
+    private ConnectionResources connResources = (ConnectionResources) ResourceFactory.getInstance().get("/Users/bikolya/workspace/IdeaProjects/mafia/src/main/resources/connection.xml");
 
     public Connection getConnection()
     {
@@ -15,17 +19,14 @@ public class DataService {
         } else
             try {
                 DriverManager.registerDriver((Driver) Class.forName("com.mysql.jdbc.Driver").newInstance());
+                return DriverManager.getConnection(
+                        "jdbc:mysql://" +
+                        "localhost:" +
+                        connResources.getPort() + "/" +
+                        connResources.getDB_name() + "?" +
+                        "user=" + connResources.getUser() +"&" +
+                        "password=" + connResources.getPassword());
 
-                StringBuilder url = new StringBuilder();
-                url.
-                        append("jdbc:mysql://").
-                        append("localhost:").
-                        append("3306/").
-                        append("mafia?").
-                        append("user=bikolya&").
-                        append("password=qweqwe");
-
-                return DriverManager.getConnection(url.toString());
             } catch (SQLException | InstantiationException | IllegalAccessException | ClassNotFoundException e) {
                 e.printStackTrace();
         }

@@ -2,6 +2,7 @@ import accountService.AccountService;
 import frontend.Frontend;
 import dbService.DataService;
 import messageSystem.MessageSystem;
+import utils.resource.ResourceFactory;
 
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;

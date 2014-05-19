@@ -1,0 +1,6 @@
+<class type='utils.resource.ConnectionResources'>
+    <port>3306</port>
+    <db_name>mafia</db_name>
+    <user>bikolya</user>
+    <password>qweqwe</password>
+</class>
